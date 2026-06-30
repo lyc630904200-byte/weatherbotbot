@@ -13,8 +13,14 @@ export async function runScan(settings: AppSettings): Promise<ScanResult> {
   const skipped: ScanResult["skipped"] = [];
   try {
     const options = await discoverWeatherMarkets(120);
-    addLog({ level: "info", scope: "scan", message: `发现 ${options.length} 个潜在天气温度下单选项。`, details: null });
-    for (const option of options) {
+    addLog({
+      level: "info",
+      scope: "scan",
+      message: `通过 Polymarket Gamma 官方接口发现 ${options.length} 个潜在天气温度下单选项。`,
+      details: { primarySource: "gamma-api.polymarket.com/events?tag_slug=weather" }
+    });
+    const analysisLimit = Math.min(10, Math.max(3, settings.maxCandidates * 3));
+    for (const option of options.slice(0, analysisLimit)) {
       if (added.length >= settings.maxCandidates) break;
       const weather = await getWeatherSnapshot(option);
       const decision = await askAiForScan(option, weather, settings.riskMode);
